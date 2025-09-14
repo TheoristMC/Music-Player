@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Music Player</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f2f2f2;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        height: 100dvh;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      h2 {
+        margin-bottom: 10px;
+      }
+
+      #resetAll {
+        background: #dc3545;
+        color: #fff;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        margin-bottom: 20px;
+      }
+
+      #resetAll:hover {
+        background: #a71d2a;
+      }
+
+      .player {
+        background: #fff;
+        border: 1px solid #ccc;
+        border-radius: 12px;
+        padding: 16px;
+        margin: 10px 0;
+        width: 100%;
+        max-width: 350px;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .title {
+        font-size: 16px;
+        margin-bottom: 6px;
+        text-align: center;
+      }
+
+      .controls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-top: 6px;
+        width: 100%; /* ensure it spans full width */
+      }
+
+      .controls button {
+        flex: 1; /* all buttons inside controls share equal width */
+        background: #007bff;
+        color: #fff;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background 0.2s;
+        text-align: center;
+      }
+
+      .controls button:hover {
+        background: #0056b3;
+      }
+
+      .duration {
+        font-size: 13px;
+        color: #555;
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 500px) {
+        .player {
+          max-width: 90%;
+          padding: 12px;
+        }
+
+        .controls button {
+          padding: 6px 10px;
+          font-size: 13px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <button id="resetAll">Reset All</button>
+    <div id="players-container"></div>
+
+    <script>
+      // 🎵 Customize your music list here
+      const musicList = [
+        { title: "Stinger", src: "sounds/Stinger.mp3" },
+        { title: "Happy", src: "sounds/Happy-Music.mp3" },
+        { title: "Slow-Mo", src: "sounds/Slow-Mo-Music.mp3" },
+        { title: "Sad", src: "sounds/Sad-Music.mp3" },
+      ];
+
+      // How many players you want
+      const numberOfPlayers = 3;
+
+      const container = document.getElementById("players-container");
+      const resetAllBtn = document.getElementById("resetAll");
+
+      // Keep track of current audio playing
+      let currentAudio = null;
+      let currentButton = null;
+      const allPlayers = [];
+
+      musicList.forEach((song) => {
+        const playerDiv = document.createElement("div");
+        playerDiv.className = "player";
+
+        const title = document.createElement("div");
+        title.className = "title";
+        title.innerText = song.title;
+
+        const controls = document.createElement("div");
+        controls.className = "controls";
+
+        const playButton = document.createElement("button");
+        playButton.innerText = "Play";
+
+        const durationSpan = document.createElement("span");
+        durationSpan.className = "duration";
+        durationSpan.innerText = "0:00 / --:--";
+
+        const audio = document.createElement("audio");
+        audio.src = song.src;
+
+        // Load metadata for total duration
+        audio.addEventListener("loadedmetadata", () => {
+          updateDuration();
+        });
+
+        // Update time as it plays
+        audio.addEventListener("timeupdate", updateDuration);
+
+        function updateDuration() {
+          const current = formatTime(audio.currentTime);
+          const total = isNaN(audio.duration)
+            ? "--:--"
+            : formatTime(audio.duration);
+          durationSpan.innerText = `${current} / ${total}`;
+        }
+
+        function formatTime(seconds) {
+          const mins = Math.floor(seconds / 60);
+          const secs = Math.floor(seconds % 60)
+            .toString()
+            .padStart(2, "0");
+          return `${mins}:${secs}`;
+        }
+
+        // Play/Pause logic
+        playButton.addEventListener("click", () => {
+          if (audio.paused) {
+            // Pause other audio if playing
+            if (currentAudio && currentAudio !== audio) {
+              currentAudio.pause();
+              if (currentButton) currentButton.innerText = "Play";
+            }
+            audio.play();
+            playButton.innerText = "Pause";
+            currentAudio = audio;
+            currentButton = playButton;
+          } else {
+            audio.pause();
+            playButton.innerText = "Play";
+          }
+        });
+
+        // Reset when ended
+        audio.addEventListener("ended", () => {
+          playButton.innerText = "Play";
+          if (currentAudio === audio) {
+            currentAudio = null;
+            currentButton = null;
+          }
+        });
+
+        controls.appendChild(playButton);
+        controls.appendChild(durationSpan);
+        playerDiv.appendChild(title);
+        playerDiv.appendChild(controls);
+        playerDiv.appendChild(audio);
+
+        container.appendChild(playerDiv);
+
+        // Keep reference for reset button
+        allPlayers.push({ audio, playButton, updateDuration });
+      });
+
+      // Reset all players
+      resetAllBtn.addEventListener("click", () => {
+        allPlayers.forEach(({ audio, playButton, updateDuration }) => {
+          audio.pause();
+          audio.currentTime = 0;
+          playButton.innerText = "Play";
+          updateDuration();
+        });
+        currentAudio = null;
+        currentButton = null;
+      });
+    </script>
+  </body>
+</html>
